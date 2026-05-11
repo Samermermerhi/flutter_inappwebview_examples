@@ -22,7 +22,7 @@ class _PayhipAppState extends State<PayhipApp> {
   InAppWebViewController? webViewController;
 
   // --- CONFIGURATION: REPLACE THIS URL ---
-  final String myStoreUrl = "https://yourcustomdomain.com"; 
+  final String myStoreUrl = "https://samermerhi.com"; 
 
   @override
   Widget build(BuildContext context) {
