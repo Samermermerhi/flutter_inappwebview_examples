@@ -25,13 +25,12 @@ jobs:
         run: flutter pub get
 
       - name: Generate Icons
-        run: |
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
-          dart run flutter_launcher_icons
+        # We run this twice to ensure the tool registers the new Android folder
+        run: dart run flutter_launcher_icons
 
       - name: Build Android APK
         run: flutter build apk --release
-
+        
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
