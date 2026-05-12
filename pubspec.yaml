@@ -18,4 +18,6 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icon/app_icon.png"
-  remove_alpha_ios: true # Helps pass Apple's store checks
+  min_sdk_android: 21 # Forces compatibility to avoid 255 error
+  remove_alpha_ios: true
+
