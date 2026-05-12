@@ -13,16 +13,15 @@ void main() async {
 
 class PayhipApp extends StatefulWidget {
   const PayhipApp({super.key});
-
   @override
   State<PayhipApp> createState() => _PayhipAppState();
 }
 
 class _PayhipAppState extends State<PayhipApp> {
   InAppWebViewController? webViewController;
-
-  // --- CONFIGURATION: REPLACE THIS URL ---
-  final String myStoreUrl = "https://samermerhi.com"; 
+  
+  // 1. CHANGE THIS to your custom domain
+  final String myStoreUrl = "https://yourcustomdomain.com"; 
 
   @override
   Widget build(BuildContext context) {
@@ -33,40 +32,27 @@ class _PayhipAppState extends State<PayhipApp> {
           initialSettings: InAppWebViewSettings(
             javaScriptEnabled: true,
             useOnDownloadStart: true,
-            supportMultipleWindows: true, // Crucial for PayPal/Stripe popups
+            // 2. PayPal/Stripe support: allows payment windows to open
+            supportMultipleWindows: true, 
             javaScriptCanOpenWindowsAutomatically: true,
-            // Forces Google/Facebook to allow the login by mimicking a real browser
+            // 3. Google/FB Login fix: mimics a real mobile browser
             userAgent: "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36",
-            allowsInlineMediaPlayback: true, // For YouTube videos
+            allowsInlineMediaPlayback: true, 
           ),
           
-          // Handles YouTube and other external app links
+          // 4. Handles YouTube App redirects
           shouldOverrideUrlLoading: (controller, navigationAction) async {
             var uri = navigationAction.request.url!;
-            
-            // Check if it is a YouTube link
             if (uri.host.contains("youtube.com") || uri.host.contains("youtu.be")) {
               if (await canLaunchUrl(uri)) {
                 await launchUrl(uri, mode: LaunchMode.externalApplication);
                 return NavigationActionPolicy.CANCEL;
               }
             }
-
-            // Allow standard web navigation
-            if (["http", "https"].contains(uri.scheme)) {
-              return NavigationActionPolicy.ALLOW;
-            }
-
-            // Try to open other apps (Mail, Phone, etc)
-            if (await canLaunchUrl(uri)) {
-              await launchUrl(uri);
-              return NavigationActionPolicy.CANCEL;
-            }
-            
             return NavigationActionPolicy.ALLOW;
           },
 
-          // Handles the actual popup windows for payments
+          // 5. Handles actual payment popup windows (PayPal/Stripe)
           onCreateWindow: (controller, createWindowAction) async {
             showDialog(
               context: context,
@@ -82,7 +68,7 @@ class _PayhipAppState extends State<PayhipApp> {
   }
 }
 
-// Widget to display the payment popup (PayPal/Stripe)
+// Widget to handle Secure Payment Popups
 class WindowPopup extends StatelessWidget {
   final CreateWindowAction createWindowAction;
   const WindowPopup({super.key, required this.createWindowAction});
