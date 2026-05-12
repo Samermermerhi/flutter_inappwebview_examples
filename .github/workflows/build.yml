@@ -17,12 +17,16 @@ jobs:
       - name: Force Payhip Code
         run: git checkout lib/main.dart pubspec.yaml
 
-      - name: Inject Android Permissions
-        # These lines ensure the app can access the internet in release mode
+      - name: Inject Permissions and Icon
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
+          # Internet Permission
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"\/>' $MANIFEST
           sed -i '/<application/a \        android:usesCleartextTraffic="true"' $MANIFEST
+          
+          # Force your logo into the app folder manually
+          mkdir -p android/app/src/main/res/mipmap-xhdpi
+          cp assets/icon/app_icon.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
 
       - name: Install Dependencies
         run: flutter pub get
