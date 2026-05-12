@@ -1,26 +1,35 @@
-name: samer_merhi
-description: My Payhip Store App
+name: payhip_store_app
+description: Mobile app for my Payhip store.
 publish_to: 'none'
 version: 1.0.0+1
+
 environment:
   sdk: '>=3.0.0 <4.0.0'
+
 dependencies:
   flutter:
     sdk: flutter
+  # Essential for Payhip store display and social logins
   flutter_inappwebview: ^6.0.0
+  # Essential for YouTube and external links
   url_launcher: ^6.2.5
-flutter:
-  uses-material-design: true
-dev_dependencies:
-  flutter_launcher_icons: "^0.13.1"
 
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  # The tool that builds your icons
+  flutter_launcher_icons: ^0.13.1
+
+# Icon Generator Configuration
 flutter_launcher_icons:
-  android: true
+  android: "launcher_icon"
   ios: true
   image_path: "assets/icon/app_icon.png"
-  # These two lines are critical to prevent crashes on modern Android
-  adaptive_icon_background: "#ffffff" 
+  min_sdk_android: 21
+  remove_alpha_ios: true
+  adaptive_icon_background: "#ffffff"
   adaptive_icon_foreground: "assets/icon/app_icon.png"
-  # This prevents the tool from hunting for missing Android files
-  min_sdk_android: 21 
 
+flutter:
+  uses-material-design: true

@@ -24,6 +24,10 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      - name: Fix Android SDK Config
+        # This command replaces the variable with a hard number to prevent the 255 crash
+        run: sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
+
       - name: Generate Icons
         run: dart run flutter_launcher_icons
 
