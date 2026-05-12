@@ -15,8 +15,14 @@ jobs:
         run: flutter create --platforms=android,ios --overwrite .
 
       - name: Force Payhip Code
-        # This replaces the default demo with your saved Payhip code
         run: git checkout lib/main.dart pubspec.yaml
+
+      - name: Inject Android Permissions
+        # These lines ensure the app can access the internet in release mode
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"\/>' $MANIFEST
+          sed -i '/<application/a \        android:usesCleartextTraffic="true"' $MANIFEST
 
       - name: Install Dependencies
         run: flutter pub get
