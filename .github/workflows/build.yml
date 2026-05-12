@@ -11,22 +11,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: {channel: 'stable'}
 
-      # 1. This creates only the MISSING platform folders
-      - name: Initialize Platform Folders
-        run: |
-          flutter create --platforms=android,ios .
-          # This specifically prevents the overwrite of your main.dart
-          git checkout lib/main.dart
+      - name: Initialize Project
+        run: flutter create --platforms=android,ios --overwrite .
+
+      - name: Force Payhip Code
+        # This replaces the default demo with your saved Payhip code
+        run: git checkout lib/main.dart pubspec.yaml
 
       - name: Install Dependencies
         run: flutter pub get
-
-      # 2. This fixes the common 255 error for the icon tool
-      - name: Fix Android Config
-        run: sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
-
-      - name: Generate Icons
-        run: dart run flutter_launcher_icons
 
       - name: Build Android APK
         run: flutter build apk --release
