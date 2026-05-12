@@ -16,6 +16,9 @@ jobs:
         run: flutter create --platforms=android,ios --overwrite .
       - name: Install Dependencies
         run: flutter pub get
+      - name: Generate Icons
+        # This will now look for your assets/icon/app_icon.png
+        run: dart run flutter_launcher_icons
       - name: Build Android APK
         run: flutter build apk --release
       - name: Upload APK
