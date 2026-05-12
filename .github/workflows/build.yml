@@ -6,36 +6,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Java
         uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-
+        with: {distribution: 'zulu', java-version: '17'}
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-
+        with: {channel: 'stable'}
       - name: Initialize Project
         run: flutter create --platforms=android,ios --overwrite .
-
       - name: Install Dependencies
         run: flutter pub get
-
-      - name: Fix Android SDK Config
-        # This command replaces the variable with a hard number to prevent the 255 crash
-        run: sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
-
-      - name: Generate Icons
-        run: dart run flutter_launcher_icons
-
       - name: Build Android APK
         run: flutter build apk --release
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
-        with:
-          name: payhip-android-app
-          path: build/app/outputs/flutter-apk/app-release.apk
+        with: {name: payhip-android-app, path: build/app/outputs/flutter-apk/app-release.apk}
