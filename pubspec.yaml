@@ -15,9 +15,12 @@ dev_dependencies:
   flutter_launcher_icons: "^0.13.1"
 
 flutter_launcher_icons:
-  android: true
+  android: "launcher_icon"
   ios: true
   image_path: "assets/icon/app_icon.png"
-  min_sdk_android: 21 # Forces compatibility to avoid 255 error
-  remove_alpha_ios: true
+  # These two lines are critical to prevent crashes on modern Android
+  adaptive_icon_background: "#ffffff" 
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  # This prevents the tool from hunting for missing Android files
+  min_sdk_android: 21 
 
