@@ -6,42 +6,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with: {distribution: 'zulu', java-version: '17'}
-      - uses: subosito/flutter-action@v2
+        
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with: {channel: 'stable'}
 
       # 1. Generate clean, native Android structures programmatically
       - name: Initialize App Shell
-        run: flutter create --platforms=android --overwrite .
-
-      # 2. Force your app configurations back over the default template layout
-      - name: Restore Custom Store Code
-        run: git checkout lib/main.dart pubspec.yaml
-
-      # 3. Securely inject permissions, branding, and Firebase plugins
-      - name: Inject Core Configs
         run: |
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          SETTINGS_GRADLE="android/settings.gradle"
-          APP_GRADLE="android/app/build.gradle"
-          
-          # A. Change Display Name Label
-          sed -i 's/android:label="payhip_store_app"/android:label="Samer Merhi"/g' $MANIFEST
-          
-          # B. Inject Web Access & Notification Permissions
-          sed -i '/<manifest[^>]*>/a \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"\/>' $MANIFEST
-          sed -i '/<application[^>]*>/a \        android:usesCleartextTraffic="true"' $MANIFEST
-          
-          # C. Safe Firebase Gradle Hooks
-          sed -i '/plugins {/a \    id "com.google.gms.google-services" version "4.4.1" apply false' $SETTINGS_GRADLE
-          sed -i '/plugins {/a \    id "com.google.gms.google-services"' $APP_GRADLE
-          
-          # D. Place the Firebase profile in its required compilation folder
-          mkdir -p android/app/
+          flutter create --platforms=android --org com.example --project-name payhip_store_app .
+          # Overwrite default template with your custom code files
+          git checkout lib/main.dart pubspec.yaml
+
+      # 2. Place the Firebase JSON securely into its native directory path
+      - name: Setup Firebase File
+        run: |
+          mkdir -p android/app
           cp google-services.json android/app/google-services.json
 
-      # 4. Generate custom home screen launcher configurations
+      # 3. Inject Web Access & Notification Permissions safely into the system layer
+      - name: Inject System Permissions
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          # Grant notification and internet access permissions
+          sed -i '/<manifest[^>]*>/a \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"\/>' $MANIFEST
+          sed -i '/<application[^>]*>/a \        android:usesCleartextTraffic="true"' $MANIFEST
+          # Update the label to your real store name
+          sed -i 's/android:label="payhip_store_app"/android:label="Samer Merhi"/g' $MANIFEST
+
+      # 4. Inject the branded home screen launcher icons
       - name: Inject Branded Icons
         run: |
           FOLDERS=("mipmap-mdpi" "mipmap-hdpi" "mipmap-xhdpi" "mipmap-xxhdpi" "mipmap-xxxhdpi")
@@ -52,12 +49,11 @@ jobs:
           done
 
       # 5. Compile to Release APK File
-      - name: Install Dependencies
-        run: flutter pub get
-
-      - name: Build Android APK
-        run: flutter build apk --release
-
+      - name: Install Dependencies and Build
+        run: |
+          flutter pub get
+          flutter build apk --release
+          
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with: {name: payhip-android-app, path: build/app/outputs/flutter-apk/app-release.apk}
