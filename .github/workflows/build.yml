@@ -11,16 +11,37 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: {channel: 'stable'}
 
-      # 1. Create the template safely in a separate directory so it doesn't touch your repository files
-      - name: Initialize Safe App Shell
-        run: |
-          flutter create --platforms=android ../temp_project
-          # Copy only the missing system wrapper infrastructure files into your repository
-          cp -r ../temp_project/android/gradle* ./android/
-          cp ../temp_project/android/build.gradle ./android/
-          cp ../temp_project/android/local.properties ./android/ 2>/dev/null || true
+      # 1. Generate clean, native Android structures programmatically
+      - name: Initialize App Shell
+        run: flutter create --platforms=android --overwrite .
 
-      # 2. Inject Branded Icons into all system density folders
+      # 2. Force your app configurations back over the default template layout
+      - name: Restore Custom Store Code
+        run: git checkout lib/main.dart pubspec.yaml
+
+      # 3. Securely inject permissions, branding, and Firebase plugins
+      - name: Inject Core Configs
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          SETTINGS_GRADLE="android/settings.gradle"
+          APP_GRADLE="android/app/build.gradle"
+          
+          # A. Change Display Name Label
+          sed -i 's/android:label="payhip_store_app"/android:label="Samer Merhi"/g' $MANIFEST
+          
+          # B. Inject Web Access & Notification Permissions
+          sed -i '/<manifest[^>]*>/a \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"\/>' $MANIFEST
+          sed -i '/<application[^>]*>/a \        android:usesCleartextTraffic="true"' $MANIFEST
+          
+          # C. Safe Firebase Gradle Hooks
+          sed -i '/plugins {/a \    id "com.google.gms.google-services" version "4.4.1" apply false' $SETTINGS_GRADLE
+          sed -i '/plugins {/a \    id "com.google.gms.google-services"' $APP_GRADLE
+          
+          # D. Place the Firebase profile in its required compilation folder
+          mkdir -p android/app/
+          cp google-services.json android/app/google-services.json
+
+      # 4. Generate custom home screen launcher configurations
       - name: Inject Branded Icons
         run: |
           FOLDERS=("mipmap-mdpi" "mipmap-hdpi" "mipmap-xhdpi" "mipmap-xxhdpi" "mipmap-xxxhdpi")
@@ -30,6 +51,7 @@ jobs:
             cp assets/icon/app_icon.png "android/app/src/main/res/$folder/ic_launcher_round.png"
           done
 
+      # 5. Compile to Release APK File
       - name: Install Dependencies
         run: flutter pub get
 
