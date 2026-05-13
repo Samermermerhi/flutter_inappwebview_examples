@@ -11,15 +11,50 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: {channel: 'stable'}
 
-      # 1. Builds the system but keeps your custom files and custom app name intact
-      - name: Initialize Project
+      # 1. Initialize a perfectly fresh, modern Flutter Android template shell
+      - name: Initialize App Shell
         run: flutter create --platforms=android --overwrite .
 
-      # 2. Ensures the compiler uses your custom configs and your Payhip main.dart
-      - name: Force Custom Configurations
-        run: git checkout lib/main.dart pubspec.yaml android/app/src/main/AndroidManifest.xml android/app/build.gradle
+      # 2. Force GitHub to pull back your Payhip code and Firebase JSON over the generated template
+      - name: Restore Custom Store Code
+        run: git checkout lib/main.dart pubspec.yaml android/app/google-services.json
 
-      # 3. Manually injects the branded home screen icons into the generated build paths
+      # 3. Use an automated Python string patcher to safely modify the Android files without parsing breaks
+      - name: Inject Core Configs, Permissions, and Firebase Plugins
+        run: |
+          python3 -c '
+          import os
+
+          # A. Patch AndroidManifest for Display Name, Permissions, and Cleartext Traffic
+          manifest_path = "android/app/src/main/AndroidManifest.xml"
+          with open(manifest_path, "r") as f: content = f.read()
+          
+          # Inject App Name
+          content = content.replace("android:label=\"payhip_store_app\"", "android:label=\"Samer Merhi\"")
+          
+          # Inject Permissions right under the manifest tag open
+          permissions = "\n    <uses-permission android:name=\"android.permission.INTERNET\"/>\n    <uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\"/>"
+          content = content.replace("<manifest xmlns:android=\"android.com\">", "<manifest xmlns:android=\"android.com\">" + permissions)
+          
+          # Inject Cleartext traffic for checkout redirection frameworks
+          content = content.replace("<application", "<application android:usesCleartextTraffic=\"true\"")
+          
+          with open(manifest_path, "w") as f: f.write(content)
+
+          # B. Inject the Google Services plugin safely into the modern multi-file Gradle layout
+          settings_path = "android/settings.gradle"
+          if os.path.exists(settings_path):
+              with open(settings_path, "r") as f: s_content = f.read()
+              s_content = s_content.replace("plugins {", "plugins {\n    id \"com.google.gms.google-services\" version \"4.4.1\" apply false")
+              with open(settings_path, "w") as f: f.write(s_content)
+
+          app_gradle_path = "android/app/build.gradle"
+          with open(app_gradle_path, "r") as f: g_content = f.read()
+          g_content = g_content.replace("plugins {", "plugins {\n    id \"com.google.gms.google-services\"")
+          with open(app_gradle_path, "w") as f: f.write(g_content)
+          '
+
+      # 4. Inject the branded square and rounded launcher home screen icons 
       - name: Inject Branded Icons
         run: |
           FOLDERS=("mipmap-mdpi" "mipmap-hdpi" "mipmap-xhdpi" "mipmap-xxhdpi" "mipmap-xxxhdpi")
