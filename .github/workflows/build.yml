@@ -34,6 +34,10 @@ jobs:
             cp assets/icon/app_icon.png "android/app/src/main/res/$folder/ic_launcher_round.png"
           done
 
+          # 4. Change the display name under the icon (Change "Your Store Name" to your real brand)
+          sed -i 's/android:label="payhip_store_app"/android:label="Samer Merhi"/g' $MANIFEST
+
+
 
 
       - name: Install Dependencies
