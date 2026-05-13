@@ -2,7 +2,6 @@ name: Build Payhip App
 on: [push]
 
 jobs:
-  # --- ANDROID FACTORY ---
   build-android:
     runs-on: ubuntu-latest
     steps:
@@ -13,23 +12,33 @@ jobs:
         with: {channel: 'stable'}
 
       - name: Initialize Project
-        run: flutter create --platforms=android,ios --overwrite .
+        run: flutter create --platforms=android --overwrite .
 
       - name: Force Payhip Code
         run: git checkout lib/main.dart pubspec.yaml
 
-      - name: Inject Permissions and Branded Icons
+      - name: Inject Configuration, Icons, and Firebase
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"\/>' $MANIFEST
-          sed -i '/<application/a \        android:usesCleartextTraffic="true"' $MANIFEST
+          APP_GRADLE="android/app/build.gradle"
+          ROOT_GRADLE="android/build.gradle"
+          
+          # 1. Clear out the old label and insert permissions directly under the <manifest> opening tag
+          sed -i 's/android:label="payhip_store_app"/android:label="Samer Merhi"/g' $MANIFEST
+          sed -i '/<manifest[^>]*>/a \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"\/>' $MANIFEST
+          sed -i '/<application[^>]*>/a \        android:usesCleartextTraffic="true"' $MANIFEST
+          
+          # 2. Inject Branded Icons
           FOLDERS=("mipmap-mdpi" "mipmap-hdpi" "mipmap-xhdpi" "mipmap-xxhdpi" "mipmap-xxxhdpi")
           for folder in "${FOLDERS[@]}"; do
             mkdir -p "android/app/src/main/res/$folder"
             cp assets/icon/app_icon.png "android/app/src/main/res/$folder/ic_launcher.png"
             cp assets/icon/app_icon.png "android/app/src/main/res/$folder/ic_launcher_round.png"
           done
-          sed -i 's/android:label="payhip_store_app"/android:label="Your Store Name"/g' $MANIFEST
+          
+          # 3. Inject Firebase Core Dependencies cleanly into Gradle
+          sed -i '/dependencies {/a \        classpath "com.google.gms:google-services:4.4.1"' $ROOT_GRADLE
+          echo 'apply plugin: "com.google.gms.google-services"' >> $APP_GRADLE
 
       - name: Install Dependencies
         run: flutter pub get
@@ -40,33 +49,3 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with: {name: payhip-android-app, path: build/app/outputs/flutter-apk/app-release.apk}
-
-  # --- iOS FACTORY ---
-  build-ios:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with: {channel: 'stable'}
-
-      - name: Initialize Project
-        run: flutter create --platforms=android,ios --overwrite .
-
-      - name: Force Payhip Code
-        run: git checkout lib/main.dart pubspec.yaml
-
-      - name: Install Dependencies
-        run: flutter pub get
-
-      - name: Build iOS App Framework
-        # This builds the raw iOS files without requiring Apple Certificates yet
-        run: flutter build ios --release --no-codesign
-
-      - name: Compress iOS Build
-        run: |
-          cd build/ios/iphoneos
-          zip -r ../../../payhip-ios-app.zip Runner.app
-
-      - name: Upload iOS Artifact
-        uses: actions/upload-artifact@v4
-        with: {name: payhip-ios-app, path: payhip-ios-app.zip}
