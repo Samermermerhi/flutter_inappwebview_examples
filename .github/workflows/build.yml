@@ -27,6 +27,7 @@ jobs:
           # Force your logo into the app folder manually
           mkdir -p android/app/src/main/res/mipmap-xhdpi
           cp assets/icon/app_icon.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          
 
       - name: Install Dependencies
         run: flutter pub get
