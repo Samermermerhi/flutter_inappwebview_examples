@@ -6,39 +6,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with: {distribution: 'zulu', java-version: '17'}
-        
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with: {channel: 'stable'}
 
-      # 1. Generate clean, native Android structures programmatically
       - name: Initialize App Shell
         run: |
           flutter create --platforms=android --org com.example --project-name payhip_store_app .
-          # Overwrite default template with your custom code files
           git checkout lib/main.dart pubspec.yaml
 
-      # 2. Place the Firebase JSON securely into its native directory path
-      - name: Setup Firebase File
-        run: |
-          mkdir -p android/app
-          cp google-services.json android/app/google-services.json
-
-      # 3. Inject Web Access & Notification Permissions safely into the system layer
-      - name: Inject System Permissions
+      - name: Inject System Permissions & Custom Store Name
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-          # Grant notification and internet access permissions
+          # Grant absolute background notification and internet rights directly inside the system tags
           sed -i '/<manifest[^>]*>/a \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"\/>' $MANIFEST
           sed -i '/<application[^>]*>/a \        android:usesCleartextTraffic="true"' $MANIFEST
-          # Update the label to your real store name
           sed -i 's/android:label="payhip_store_app"/android:label="Samer Merhi"/g' $MANIFEST
 
-      # 4. Inject the branded home screen launcher icons
       - name: Inject Branded Icons
         run: |
           FOLDERS=("mipmap-mdpi" "mipmap-hdpi" "mipmap-xhdpi" "mipmap-xxhdpi" "mipmap-xxxhdpi")
@@ -48,8 +33,7 @@ jobs:
             cp assets/icon/app_icon.png "android/app/src/main/res/$folder/ic_launcher_round.png"
           done
 
-      # 5. Compile to Release APK File
-      - name: Install Dependencies and Build
+      - name: Compile Application
         run: |
           flutter pub get
           flutter build apk --release

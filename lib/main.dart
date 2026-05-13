@@ -2,9 +2,49 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Keeps connection alive when app is minimized
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    // 1. HARDCODED CONFIGURATION: Replace these placeholders with your actual values from google-services.json
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: "AIzaSyBxgD6VGgZjma-NplKABakpP6bWAbspBo4",                // Paste current_key here
+        appId: "1:25389115383:android:b1cda09502be3caed2b0f2",   // Paste mobilesdk_app_id here
+        messagingSenderId: "25389115383",      // Paste project_number here
+        projectId: "payhip-store-app",   // Paste project_id here
+      ),
+    );
+
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    
+    // 2. Trigger the missing permission request prompt directly on screen
+    NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    
+    // 3. Auto-subscribe the phone to your global marketing channel
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      await FirebaseMessaging.instance.subscribeToTopic("marketing");
+      
+      // OPTIONAL LOG: Prints your individual device token in the build logs if needed
+      String? token = await FirebaseMessaging.instance.getToken();
+      debugPrint("FCM Token registered: $token");
+    }
+  } catch (e) {
+    debugPrint("Firebase connection failed: $e");
+  }
+
   runApp(const MaterialApp(
     home: PayhipApp(),
     debugShowCheckedModeBanner: false,
@@ -20,8 +60,8 @@ class PayhipApp extends StatefulWidget {
 class _PayhipAppState extends State<PayhipApp> {
   InAppWebViewController? webViewController;
   
-  // 1. CHANGE THIS to your custom domain
-  final String myStoreUrl = "https://samermerhi.com"; 
+  // Update this to your real custom domain (.com)
+  final String myStoreUrl = "https://yourcustomdomain.com"; 
 
   @override
   Widget build(BuildContext context) {
@@ -32,15 +72,11 @@ class _PayhipAppState extends State<PayhipApp> {
           initialSettings: InAppWebViewSettings(
             javaScriptEnabled: true,
             useOnDownloadStart: true,
-            // 2. PayPal/Stripe support: allows payment windows to open
-            supportMultipleWindows: true, 
+            supportMultipleWindows: true,
             javaScriptCanOpenWindowsAutomatically: true,
-            // 3. Google/FB Login fix: mimics a real mobile browser
             userAgent: "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36",
-            allowsInlineMediaPlayback: true, 
+            allowsInlineMediaPlayback: true,
           ),
-          
-          // 4. Handles YouTube App redirects
           shouldOverrideUrlLoading: (controller, navigationAction) async {
             var uri = navigationAction.request.url!;
             if (uri.host.contains("youtube.com") || uri.host.contains("youtu.be")) {
@@ -51,14 +87,10 @@ class _PayhipAppState extends State<PayhipApp> {
             }
             return NavigationActionPolicy.ALLOW;
           },
-
-          // 5. Handles actual payment popup windows (PayPal/Stripe)
           onCreateWindow: (controller, createWindowAction) async {
             showDialog(
               context: context,
-              builder: (context) {
-                return WindowPopup(createWindowAction: createWindowAction);
-              },
+              builder: (context) => WindowPopup(createWindowAction: createWindowAction),
             );
             return true;
           },
@@ -68,7 +100,6 @@ class _PayhipAppState extends State<PayhipApp> {
   }
 }
 
-// Widget to handle Secure Payment Popups
 class WindowPopup extends StatelessWidget {
   final CreateWindowAction createWindowAction;
   const WindowPopup({super.key, required this.createWindowAction});
