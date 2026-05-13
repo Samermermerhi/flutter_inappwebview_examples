@@ -11,24 +11,24 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: {channel: 'stable'}
 
-      - name: Initialize Project
-        run: flutter create --platforms=android --overwrite .
+      - name: Initialize Project with Custom Name
+        # CHANGE "Your Store Name" below to your exact real business name (keep the quotes)
+        run: flutter create --platforms=android --project-name=payhip_store_app --org=com.example --overwrite .
 
       - name: Force Payhip Code
         run: git checkout lib/main.dart pubspec.yaml
 
-      - name: Inject Configuration, Icons, and Firebase
+      - name: Inject Permissions and Icons
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           APP_GRADLE="android/app/build.gradle"
           ROOT_GRADLE="android/build.gradle"
           
-          # 1. Clear out the old label and insert permissions directly under the <manifest> opening tag
-          sed -i 's/android:label="payhip_store_app"/android:label="Samer Merhi"/g' $MANIFEST
+          # 1. Inject modern notification and internet permissions directly under the <manifest> opening tag
           sed -i '/<manifest[^>]*>/a \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"\/>' $MANIFEST
           sed -i '/<application[^>]*>/a \        android:usesCleartextTraffic="true"' $MANIFEST
           
-          # 2. Inject Branded Icons
+          # 2. Inject Branded Icons into all system density folders
           FOLDERS=("mipmap-mdpi" "mipmap-hdpi" "mipmap-xhdpi" "mipmap-xxhdpi" "mipmap-xxxhdpi")
           for folder in "${FOLDERS[@]}"; do
             mkdir -p "android/app/src/main/res/$folder"
