@@ -61,7 +61,7 @@ class _PayhipAppState extends State<PayhipApp> {
   InAppWebViewController? webViewController;
   
   // Update this to your real custom domain (.com)
-  final String myStoreUrl = "https://yourcustomdomain.com"; 
+  final String myStoreUrl = "https://samermerhi.com"; 
 
   @override
   Widget build(BuildContext context) {
