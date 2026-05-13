@@ -19,10 +19,16 @@ jobs:
       - name: Inject System Permissions & Custom Store Name
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-          # Grant absolute background notification and internet rights directly inside the system tags
+          
+          # 1. Grant absolute background notification and internet rights
           sed -i '/<manifest[^>]*>/a \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"\/>' $MANIFEST
-          sed -i '/<application[^>]*>/a \        android:usesCleartextTraffic="true"' $MANIFEST
+          
+          # 2. BULLETPROOF CLEARTEXT FIX: Replaces the entire opening application tag to force security permission clearance
+          sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' $MANIFEST
+          
+          # 3. Update the label to your real store name
           sed -i 's/android:label="payhip_store_app"/android:label="Samer Merhi"/g' $MANIFEST
+
 
       - name: Inject Branded Icons
         run: |
