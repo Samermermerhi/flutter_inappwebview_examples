@@ -7,39 +7,31 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Keeps connection alive when app is minimized
+  await Firebase.initializeApp();
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   try {
-    // 1. HARDCODED CONFIGURATION: Replace these placeholders with your actual values from google-services.json
+    // --- KEEP YOUR EXISITING HARDCODED KEYS HERE ---
     await Firebase.initializeApp(
       options: const FirebaseOptions(
-        apiKey: "AIzaSyBxgD6VGgZjma-NplKABakpP6bWAbspBo4",                // Paste current_key here
-        appId: "1:25389115383:android:b1cda09502be3caed2b0f2",   // Paste mobilesdk_app_id here
-        messagingSenderId: "25389115383",      // Paste project_number here
-        projectId: "payhip-store-app",   // Paste project_id here
+        apiKey: "AIzaSyBxgD6VGgZjma-NplKABakpP6bWAbspBo4",                
+        appId: "1:25389115383:android:b1cda09502be3caed2b0f2",   
+        messagingSenderId: "25389115383",      
+        projectId: "payhip-store-app",   
       ),
     );
 
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     
-    // 2. Trigger the missing permission request prompt directly on screen
     NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
+      alert: true, badge: true, sound: true,
     );
     
-    // 3. Auto-subscribe the phone to your global marketing channel
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       await FirebaseMessaging.instance.subscribeToTopic("marketing");
-      
-      // OPTIONAL LOG: Prints your individual device token in the build logs if needed
-      String? token = await FirebaseMessaging.instance.getToken();
-      debugPrint("FCM Token registered: $token");
     }
   } catch (e) {
     debugPrint("Firebase connection failed: $e");
@@ -64,6 +56,36 @@ class _PayhipAppState extends State<PayhipApp> {
   final String myStoreUrl = "https://samermerhi.com"; 
 
   @override
+  void initState() {
+    super.initState();
+    _setupNotificationInteractions();
+  }
+
+  // Listens for notification taps and forces the WebView to redirect
+  void _setupNotificationInteractions() async {
+    // 1. Handles tap when the app was COMPLETELY CLOSED
+    RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      _handleMessageRedirect(initialMessage);
+    }
+
+    // 2. Handles tap when the app was in the BACKGROUND / MINIMIZED
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      _handleMessageRedirect(message);
+    });
+  }
+
+  void _handleMessageRedirect(RemoteMessage message) {
+    // Looks for a custom web link attached to the notification data payload
+    if (message.data.containsKey('url')) {
+      String? targetUrl = message.data['url'];
+      if (targetUrl != null && webViewController != null) {
+        webViewController!.loadUrl(urlRequest: URLRequest(url: WebUri(targetUrl)));
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
@@ -77,6 +99,9 @@ class _PayhipAppState extends State<PayhipApp> {
             userAgent: "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36",
             allowsInlineMediaPlayback: true,
           ),
+          onWebViewCreated: (controller) {
+            webViewController = controller;
+          },
           shouldOverrideUrlLoading: (controller, navigationAction) async {
             var uri = navigationAction.request.url!;
             if (uri.host.contains("youtube.com") || uri.host.contains("youtu.be")) {
