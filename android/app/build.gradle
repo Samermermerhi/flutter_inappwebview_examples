@@ -1,0 +1,24 @@
+plugins {
+    id "com.android.application"
+    id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services" // Applies the Firebase config parameters
+}
+
+android {
+    namespace "com.example.payhip_store_app"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.example.payhip_store_app"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.debug
+        }
+    }
+}
