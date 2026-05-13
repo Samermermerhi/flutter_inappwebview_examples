@@ -11,16 +11,16 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: {channel: 'stable'}
 
-      # 1. Spins up platform infrastructure folders
-      - name: Initialize App Shell
-        run: flutter create --platforms=android --overwrite .
-
-      # 2. Orders the compiler to overwrite the default template with your custom files
-      - name: Restore Branded Files and Firebase Configs
+      # 1. Create the template safely in a separate directory so it doesn't touch your repository files
+      - name: Initialize Safe App Shell
         run: |
-          git checkout lib/main.dart pubspec.yaml android/settings.gradle android/app/build.gradle android/app/src/main/AndroidManifest.xml android/app/google-services.json
+          flutter create --platforms=android ../temp_project
+          # Copy only the missing system wrapper infrastructure files into your repository
+          cp -r ../temp_project/android/gradle* ./android/
+          cp ../temp_project/android/build.gradle ./android/
+          cp ../temp_project/android/local.properties ./android/ 2>/dev/null || true
 
-      # 3. Copies your asset image into the resource tree layout folders dynamically
+      # 2. Inject Branded Icons into all system density folders
       - name: Inject Branded Icons
         run: |
           FOLDERS=("mipmap-mdpi" "mipmap-hdpi" "mipmap-xhdpi" "mipmap-xxhdpi" "mipmap-xxxhdpi")
