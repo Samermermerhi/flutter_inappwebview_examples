@@ -17,17 +17,24 @@ jobs:
       - name: Force Payhip Code
         run: git checkout lib/main.dart pubspec.yaml
 
-      - name: Inject Permissions and Icon
+      - name: Inject Permissions and Branded Icons
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-          # Internet Permission
+          # 1. Add Internet Permissions
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"\/>' $MANIFEST
           sed -i '/<application/a \        android:usesCleartextTraffic="true"' $MANIFEST
           
-          # Force your logo into the app folder manually
-          mkdir -p android/app/src/main/res/mipmap-xhdpi
-          cp assets/icon/app_icon.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          # 2. Define all the standard Android icon folders
+          FOLDERS=("mipmap-mdpi" "mipmap-hdpi" "mipmap-xhdpi" "mipmap-xxhdpi" "mipmap-xxxhdpi")
           
+          # 3. Force your logo into every single density folder as both square and round
+          for folder in "${FOLDERS[@]}"; do
+            mkdir -p "android/app/src/main/res/$folder"
+            cp assets/icon/app_icon.png "android/app/src/main/res/$folder/ic_launcher.png"
+            cp assets/icon/app_icon.png "android/app/src/main/res/$folder/ic_launcher_round.png"
+          done
+
+
 
       - name: Install Dependencies
         run: flutter pub get
