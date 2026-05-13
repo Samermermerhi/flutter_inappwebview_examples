@@ -74,7 +74,36 @@ class _PayhipAppState extends State<PayhipApp> {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       _handleMessageRedirect(message);
     });
+
+    // 3. NEW ADDITION: Listens for notifications while the app is OPEN on the screen
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (message.notification != null) {
+        // Displays a native, clean pop-up dialog box right over your website view
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(message.notification!.title ?? "Notification"),
+            content: Text(message.notification!.body ?? ""),
+            actions: [
+              TextButton(
+                child: const Text("Dismiss"),
+                onPressed: () => Navigator.pop(context),
+              ),
+              if (message.data.containsKey('url'))
+                TextButton(
+                  child: const Text("View"),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _handleMessageRedirect(message);
+                  },
+                ),
+            ],
+          ),
+        );
+      }
+    });
   }
+
 
   void _handleMessageRedirect(RemoteMessage message) {
     // Looks for a custom web link attached to the notification data payload
