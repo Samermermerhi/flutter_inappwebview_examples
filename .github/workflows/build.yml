@@ -2,7 +2,8 @@ name: Build Payhip App
 on: [push]
 
 jobs:
-  build:
+  # --- ANDROID FACTORY ---
+  build-android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,25 +21,15 @@ jobs:
       - name: Inject Permissions and Branded Icons
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-          # 1. Add Internet Permissions
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"\/>' $MANIFEST
           sed -i '/<application/a \        android:usesCleartextTraffic="true"' $MANIFEST
-          
-          # 2. Define all the standard Android icon folders
           FOLDERS=("mipmap-mdpi" "mipmap-hdpi" "mipmap-xhdpi" "mipmap-xxhdpi" "mipmap-xxxhdpi")
-          
-          # 3. Force your logo into every single density folder as both square and round
           for folder in "${FOLDERS[@]}"; do
             mkdir -p "android/app/src/main/res/$folder"
             cp assets/icon/app_icon.png "android/app/src/main/res/$folder/ic_launcher.png"
             cp assets/icon/app_icon.png "android/app/src/main/res/$folder/ic_launcher_round.png"
           done
-
-          # 4. Change the display name under the icon (Change "Your Store Name" to your real brand)
-          sed -i 's/android:label="payhip_store_app"/android:label="Samer Merhi"/g' $MANIFEST
-
-
-
+          sed -i 's/android:label="payhip_store_app"/android:label="Your Store Name"/g' $MANIFEST
 
       - name: Install Dependencies
         run: flutter pub get
@@ -49,3 +40,33 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with: {name: payhip-android-app, path: build/app/outputs/flutter-apk/app-release.apk}
+
+  # --- iOS FACTORY ---
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: {channel: 'stable'}
+
+      - name: Initialize Project
+        run: flutter create --platforms=android,ios --overwrite .
+
+      - name: Force Payhip Code
+        run: git checkout lib/main.dart pubspec.yaml
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build iOS App Framework
+        # This builds the raw iOS files without requiring Apple Certificates yet
+        run: flutter build ios --release --no-codesign
+
+      - name: Compress iOS Build
+        run: |
+          cd build/ios/iphoneos
+          zip -r ../../../payhip-ios-app.zip Runner.app
+
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with: {name: payhip-ios-app, path: payhip-ios-app.zip}
